@@ -13,7 +13,7 @@ import (
 )
 
 // version is reported by --version. A release build replaces it with the tag.
-var version = "0.2.1"
+var version = "0.2.2"
 
 // Execute runs the cloudns command tree.
 func Execute(ctx context.Context) error {

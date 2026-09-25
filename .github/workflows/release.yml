@@ -1,5 +1,5 @@
 # A v* tag starts this workflow. Notes written in the GitHub release form are kept:
-# the archives, .deb packages, and .apk packages are attached to that release.
+# the archives, one Linux .deb, one Linux .apk, and a macOS .pkg are attached.
 # A tag pushed without a release gets one.
 name: Release
 
@@ -21,7 +21,7 @@ jobs:
           go-version-file: go.mod
       - run: go test ./...
 
-  publish:
+  archives:
     needs: test
     runs-on: ubuntu-24.04
     steps:
@@ -42,6 +42,7 @@ jobs:
           set -eu
           version="${GITHUB_REF_NAME#v}"
           mkdir -p dist
+          linux_bins="$(mktemp -d)"
           ldflags="-s -w -X github.com/ldrrp/cloudns-cli/internal/cli.version=${version}"
           targets="linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64"
           for target in $targets; do
@@ -61,17 +62,82 @@ jobs:
               tar -C "$stage" -czf "${GITHUB_WORKSPACE}/dist/${name}.tar.gz" "$bin"
             fi
             if [ "$goos" = "linux" ]; then
-              VERSION="$version" ARCH="$goarch" BIN="${stage}/${bin}" \
-                nfpm pkg --config packaging/nfpm.yaml --packager deb \
-                --target "${GITHUB_WORKSPACE}/dist/${name}.deb"
-              VERSION="$version" ARCH="$goarch" BIN="${stage}/${bin}" \
-                nfpm pkg --config packaging/nfpm.yaml --packager apk \
-                --target "${GITHUB_WORKSPACE}/dist/${name}.apk"
+              cp "${stage}/${bin}" "${linux_bins}/cloudns-${goarch}"
             fi
             rm -rf "$stage"
           done
+          VERSION="$version" \
+            AMD64_BIN="${linux_bins}/cloudns-amd64" \
+            ARM64_BIN="${linux_bins}/cloudns-arm64" \
+            nfpm pkg --config packaging/nfpm.yaml --packager deb \
+            --target "${GITHUB_WORKSPACE}/dist/cloudns_${version}_linux_all.deb"
+          VERSION="$version" \
+            AMD64_BIN="${linux_bins}/cloudns-amd64" \
+            ARM64_BIN="${linux_bins}/cloudns-arm64" \
+            nfpm pkg --config packaging/nfpm.yaml --packager apk \
+            --target "${GITHUB_WORKSPACE}/dist/cloudns_${version}_linux_all.apk"
+          rm -rf "$linux_bins"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-archives
+          path: dist/*
+          if-no-files-found: error
+
+  macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Build the macOS installer
+        run: |
+          set -eu
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          ldflags="-s -w -X github.com/ldrrp/cloudns-cli/internal/cli.version=${version}"
+          stage="$(mktemp -d)"
+          for goarch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=darwin GOARCH="$goarch" \
+              go build -trimpath -ldflags "$ldflags" \
+              -o "${stage}/cloudns-${goarch}" ./cmd/cloudns
+          done
+          lipo -create "${stage}/cloudns-amd64" "${stage}/cloudns-arm64" \
+            -output "${stage}/cloudns"
+          lipo -info "${stage}/cloudns"
+          root="$(mktemp -d)"
+          mkdir -p "${root}/usr/local/bin"
+          cp "${stage}/cloudns" "${root}/usr/local/bin/cloudns"
+          chmod 0755 "${root}/usr/local/bin/cloudns"
+          pkgbuild \
+            --root "$root" \
+            --identifier com.silocitylabs.cloudns \
+            --version "$version" \
+            --install-location / \
+            --ownership recommended \
+            "dist/cloudns_${version}_darwin_universal.pkg"
+          rm -rf "$stage" "$root"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-macos-pkg
+          path: dist/*.pkg
+          if-no-files-found: error
+
+  publish:
+    needs: [archives, macos]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          set -eu
           cd dist
-          sha256sum ./*.tar.gz ./*.zip ./*.deb ./*.apk > checksums.txt
+          sha256sum ./*.tar.gz ./*.zip ./*.deb ./*.apk ./*.pkg > checksums.txt
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}

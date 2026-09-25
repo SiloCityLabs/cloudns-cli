@@ -1,6 +1,7 @@
-# Packages the Linux cloudns binary. The release workflow sets VERSION, ARCH, and BIN.
+# One Linux package for amd64 and arm64. nfpm maps arch "all" to Debian
+# "all" and Alpine "noarch". packaging/cloudns.sh selects the binary.
 name: cloudns
-arch: ${ARCH}
+arch: all
 platform: linux
 version: ${VERSION}
 section: utils
@@ -9,8 +10,17 @@ maintainer: SiloCityLabs
 description: Command-line client for the ClouDNS HTTP API
 homepage: https://github.com/SiloCityLabs/cloudns-cli
 contents:
-  - src: ${BIN}
-    dst: /usr/bin/cloudns
+  - src: ${AMD64_BIN}
+    dst: /usr/lib/cloudns/cloudns-amd64
     expand: true
+    file_info:
+      mode: 0755
+  - src: ${ARM64_BIN}
+    dst: /usr/lib/cloudns/cloudns-arm64
+    expand: true
+    file_info:
+      mode: 0755
+  - src: packaging/cloudns.sh
+    dst: /usr/bin/cloudns
     file_info:
       mode: 0755

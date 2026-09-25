@@ -16,7 +16,20 @@ Or, once the module is published:
 go install github.com/ldrrp/cloudns-cli/cmd/cloudns@latest
 ```
 
-`go install` puts the binary in `$(go env GOPATH)/bin`. You can also run the built binary from any directory. Publishing a `v*` release, or pushing that tag, attaches Linux, macOS, and Windows archives, plus `.deb` and `.apk` packages for Linux amd64 and arm64. Notes written on the release are kept. Each archive contains a `cloudns` binary. A `.deb` installs with `apt install ./cloudns_*.deb`. An `.apk` installs with `apk add --allow-untrusted ./cloudns_*.apk`. `checksums.txt` lists the SHA-256 hashes.
+`go install` puts the binary in `$(go env GOPATH)/bin`. You can also run the built binary from any directory. Publishing a `v*` release, or pushing that tag, attaches Linux, macOS, and Windows archives, one `.deb`, one `.apk`, and a macOS `.pkg`. Notes written on the release are kept. Each archive contains a `cloudns` binary. `checksums.txt` lists the SHA-256 hashes.
+
+The `.deb` and the `.apk` each contain the amd64 and arm64 binaries. Either package installs `cloudns` to `/usr/bin`, and that command runs the binary that matches the machine.
+
+```sh
+apt install ./cloudns_*_linux_all.deb
+apk add --allow-untrusted ./cloudns_*_linux_all.apk
+```
+
+The macOS `.pkg` installs a universal binary, Intel and Apple Silicon, to `/usr/local/bin/cloudns`. The package is unsigned, so install it from the command line:
+
+```sh
+sudo installer -pkg ./cloudns_*_darwin_universal.pkg -target /
+```
 
 To copy a binary onto a system bin path:
 
