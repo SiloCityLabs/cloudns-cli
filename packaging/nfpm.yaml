@@ -1,0 +1,16 @@
+# Packages the Linux cloudns binary. The release workflow sets VERSION, ARCH, and BIN.
+name: cloudns
+arch: ${ARCH}
+platform: linux
+version: ${VERSION}
+section: utils
+priority: optional
+maintainer: SiloCityLabs
+description: Command-line client for the ClouDNS HTTP API
+homepage: https://github.com/SiloCityLabs/cloudns-cli
+contents:
+  - src: ${BIN}
+    dst: /usr/bin/cloudns
+    expand: true
+    file_info:
+      mode: 0755

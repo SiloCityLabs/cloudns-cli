@@ -1,5 +1,6 @@
 # A v* tag starts this workflow. Notes written in the GitHub release form are kept:
-# the archives are attached to that release. A tag pushed without a release gets one.
+# the archives, .deb packages, and .apk packages are attached to that release.
+# A tag pushed without a release gets one.
 name: Release
 
 on:
@@ -28,6 +29,14 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+      - name: Install nfpm
+        run: |
+          set -eu
+          version=2.47.0
+          curl -fsSL -o /tmp/nfpm.tar.gz \
+            "https://github.com/goreleaser/nfpm/releases/download/v${version}/nfpm_${version}_Linux_x86_64.tar.gz"
+          tar -C /tmp -xzf /tmp/nfpm.tar.gz nfpm
+          sudo install -m 0755 /tmp/nfpm /usr/local/bin/nfpm
       - name: Build release binaries
         run: |
           set -eu
@@ -51,10 +60,18 @@ jobs:
             else
               tar -C "$stage" -czf "${GITHUB_WORKSPACE}/dist/${name}.tar.gz" "$bin"
             fi
+            if [ "$goos" = "linux" ]; then
+              VERSION="$version" ARCH="$goarch" BIN="${stage}/${bin}" \
+                nfpm pkg --config packaging/nfpm.yaml --packager deb \
+                --target "${GITHUB_WORKSPACE}/dist/${name}.deb"
+              VERSION="$version" ARCH="$goarch" BIN="${stage}/${bin}" \
+                nfpm pkg --config packaging/nfpm.yaml --packager apk \
+                --target "${GITHUB_WORKSPACE}/dist/${name}.apk"
+            fi
             rm -rf "$stage"
           done
           cd dist
-          sha256sum ./*.tar.gz ./*.zip > checksums.txt
+          sha256sum ./*.tar.gz ./*.zip ./*.deb ./*.apk > checksums.txt
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
