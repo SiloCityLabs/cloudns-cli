@@ -1,0 +1,5 @@
+/cloudns
+/bin/
+*.exe
+*.out
+coverage.txt
