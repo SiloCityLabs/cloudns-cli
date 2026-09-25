@@ -12,7 +12,8 @@ import (
 	"github.com/ldrrp/cloudns-cli/internal/config"
 )
 
-const version = "0.1.0"
+// version is reported by --version. A release build replaces it with the tag.
+var version = "0.1.0"
 
 // Execute runs the cloudns command tree.
 func Execute(ctx context.Context) error {

@@ -16,7 +16,9 @@ Or, once the module is published:
 go install github.com/ldrrp/cloudns-cli/cmd/cloudns@latest
 ```
 
-`go install` puts the binary in `$(go env GOPATH)/bin`. You can also run the built binary from any directory. To copy it onto a system bin path:
+`go install` puts the binary in `$(go env GOPATH)/bin`. You can also run the built binary from any directory. Pushing a `v*` tag publishes a GitHub release with Linux, macOS, and Windows archives. Each archive contains a `cloudns` binary, and `checksums.txt` lists the SHA-256 hashes.
+
+To copy a binary onto a system bin path:
 
 ```sh
 cloudns install
