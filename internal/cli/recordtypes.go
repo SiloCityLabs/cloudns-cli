@@ -16,7 +16,7 @@ var recordTypeExamples = []recordTypeExample{
 	{Type: "CERT", Name: "Certificate or CRL", Example: "cloudns zone record add example.com CERT @ <base64> --cert-type 6 --cert-key-tag 0 --cert-algorithm 0"},
 	{Type: "CNAME", Name: "Canonical name", Example: "cloudns zone record add example.com CNAME www target.example.net"},
 	{Type: "DNAME", Name: "Delegation of a subtree", Example: "cloudns zone record add example.com DNAME sub example.net"},
-	{Type: "DS", Name: "DNSSEC delegation signer", Example: "cloudns zone record add example.com DS @ <digest> --key-tag 12345 --algorithm 13 --digest-type 2"},
+	{Type: "DS", Name: "DNSSEC delegation signer. That host also needs an NS record", Example: "cloudns zone record add example.com DS ds <digest> --key-tag 12345 --algorithm 13 --digest-type 2"},
 	{Type: "HINFO", Name: "Host CPU and operating system", Example: "cloudns zone record add example.com HINFO www --cpu AMD --os Linux"},
 	{Type: "HTTPS", Name: "HTTPS service binding", Example: "cloudns zone record add example.com HTTPS @ . --priority 1 --parameters alpn=h2"},
 	{Type: "LOC", Name: "Geographic location", Example: "cloudns zone record add example.com LOC @ --lat-deg 42 --lat-min 21 --lat-sec 30 --lat-dir N --long-deg 71 --long-min 5 --long-sec 30 --long-dir W --altitude 10"},
