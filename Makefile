@@ -10,7 +10,7 @@ BINARY := ./cloudns
 
 .DEFAULT_GOAL := build
 
-.PHONY: build run test clean
+.PHONY: build run test clean build-install
 
 build:
 	go build -o $(BINARY) ./cmd/cloudns
@@ -23,3 +23,7 @@ test:
 
 clean:
 	rm -f $(BINARY)
+
+
+build-install: build ## Build and install the CLI
+	$(BINARY) install
