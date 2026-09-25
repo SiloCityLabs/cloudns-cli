@@ -21,7 +21,8 @@ func newZoneCmd() *cobra.Command {
   cloudns zone soa example.com
   cloudns zone export example.com
   cloudns zone status example.com
-  cloudns zone record add example.com CNAME www my-site.pages.dev --ttl 3600`,
+  cloudns zone record add example.com CNAME www my-site.pages.dev --ttl 3600
+  cloudns zone failover`,
 	}
 	cmd.AddCommand(
 		newZoneListCmd(),
@@ -34,6 +35,7 @@ func newZoneCmd() *cobra.Command {
 		newZoneStatusCmd(),
 		newZoneMasterCmd(),
 		newZoneRecordCmd(),
+		newZoneFailoverCmd(),
 	)
 	return cmd
 }

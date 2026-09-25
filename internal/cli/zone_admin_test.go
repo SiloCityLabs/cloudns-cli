@@ -50,7 +50,7 @@ func TestSOAPatchFromFlags(t *testing.T) {
 }
 
 func TestRecordAndMasterDeleteRequireYes(t *testing.T) {
-	for _, cmd := range []*cobra.Command{newZoneRecordDeleteCmd(), newZoneMasterDeleteCmd()} {
+	for _, cmd := range []*cobra.Command{newZoneRecordDeleteCmd(), newZoneMasterDeleteCmd(), newFailoverDeleteCmd()} {
 		cmd.SetArgs([]string{"example.com", "42"})
 		cmd.SilenceErrors = true
 		cmd.SilenceUsage = true

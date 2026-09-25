@@ -90,6 +90,21 @@ func TestPrintZoneInfoAndNameservers(t *testing.T) {
 	}
 }
 
+func TestPrintFailoverSettingsFlattensCheckSettings(t *testing.T) {
+	out := captureStdout(t, func() {
+		raw := []byte(`{"check_type":17,"check_settings":{"ping_threshold":"25","timeout":"2"},"main_ip":"192.0.2.10"}`)
+		if err := printFailoverSettings(raw); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if !strings.Contains(out, "PING_THRESHOLD") || !strings.Contains(out, "25") {
+		t.Fatalf("output = %q", out)
+	}
+	if strings.Contains(out, "CHECK_SETTINGS") {
+		t.Fatalf("nested object was not flattened: %q", out)
+	}
+}
+
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
 	reader, writer, err := os.Pipe()

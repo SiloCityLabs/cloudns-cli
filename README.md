@@ -128,6 +128,22 @@ cloudns zone master add example.com 192.0.2.11
 cloudns zone master delete example.com 123 --yes
 ```
 
+### Failover
+
+Failover watches one DNS record. The account has a limited number of checks. `cloudns zone failover` prints how many are in use.
+
+```sh
+cloudns zone failover
+cloudns zone failover add example.com 12345 web \
+  --down replace --up activate \
+  --main-ip 192.0.2.10 --backup-ip 192.0.2.11 \
+  --host www.example.com --port 443
+cloudns zone failover show example.com 12345
+cloudns zone failover delete example.com 12345 --yes
+```
+
+Check types are `ping`, `web`, `tcp`, `udp`, `dns`, and `smtp`. `--down` is `monitor`, `deactivate`, or `replace`. `--up` is `monitor`, `activate`, or `ignore`. Repeat `--backup-ip` for up to five addresses. `cloudns zone failover edit` replaces the whole check, so pass those fields again. `zone failover delete` requires `--yes`.
+
 ## Other commands
 
 ```sh
@@ -140,6 +156,6 @@ Human-readable tables are the default. `--json` prints the API payload.
 
 Allowed TTL values are 60, 300, 900, 1800, 3600, 21600, 43200, 86400, 172800, 259200, 604800, 1209600, and 2592000. The default is 3600.
 
-`zone delete`, `zone record delete`, and `zone master delete` do not prompt. Pass `--yes` or the command exits without calling the API.
+`zone delete`, `zone record delete`, `zone master delete`, and `zone failover delete` do not prompt. Pass `--yes` or the command exits without calling the API.
 
 API reference: https://www.cloudns.net/wiki/article/42/

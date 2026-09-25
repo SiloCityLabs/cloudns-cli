@@ -13,7 +13,7 @@ import (
 )
 
 // version is reported by --version. A release build replaces it with the tag.
-var version = "0.1.0"
+var version = "0.2.0"
 
 // Execute runs the cloudns command tree.
 func Execute(ctx context.Context) error {
@@ -50,7 +50,8 @@ and are never written to disk.`,
   cloudns zone record add example.com CNAME www my-site.pages.dev --ttl 3600
   cloudns domain list
   cloudns domain list example.com
-  cloudns domain nameservers set example.com ada.ns.cloudflare.com bob.ns.cloudflare.com`,
+  cloudns domain nameservers set example.com ada.ns.cloudflare.com bob.ns.cloudflare.com
+  cloudns zone failover`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			install, _ := cmd.Flags().GetBool("install")
 			if install {
