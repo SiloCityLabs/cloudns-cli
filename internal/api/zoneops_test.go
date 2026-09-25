@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -34,6 +35,86 @@ func TestRegisterZone(t *testing.T) {
 	wantNS := []string{"pns1.cloudns.net", "pns2.cloudns.net"}
 	if !reflect.DeepEqual(gotNS, wantNS) {
 		t.Fatalf("ns[] = %#v", gotNS)
+	}
+}
+
+func TestDeleteRecordAndMasters(t *testing.T) {
+	c := zoneTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		switch r.URL.Path {
+		case "/dns/delete-record.json":
+			if q.Get("domain-name") != "example.com" || q.Get("record-id") != "42" {
+				t.Errorf("domain=%q id=%q", q.Get("domain-name"), q.Get("record-id"))
+			}
+		case "/dns/add-master-server.json":
+			if q.Get("master-ip") != "192.0.2.10" {
+				t.Errorf("master-ip = %q", q.Get("master-ip"))
+			}
+		case "/dns/delete-master-server.json":
+			if q.Get("master-id") != "7" {
+				t.Errorf("master-id = %q", q.Get("master-id"))
+			}
+		case "/dns/get-zone-info.json":
+			io.WriteString(w, `{"name":"example.com","type":"master","zone":"domain","status":1}`)
+			return
+		default:
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
+		io.WriteString(w, `{"status":"Success","statusDescription":"ok"}`)
+	})
+	if _, err := c.DeleteRecord(context.Background(), "example.com", "42"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.DeleteRecord(context.Background(), "example.com", ""); err == nil {
+		t.Fatal("expected missing record id to fail")
+	}
+	if _, err := c.AddMaster(context.Background(), "example.com", "not-an-ip"); err == nil {
+		t.Fatal("expected invalid master IP to fail")
+	}
+	if _, err := c.AddMaster(context.Background(), "example.com", "192.0.2.10"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.DeleteMaster(context.Background(), "example.com", "7"); err != nil {
+		t.Fatal(err)
+	}
+	info, _, err := c.GetZoneInfo(context.Background(), "example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info["name"] != "example.com" || info["zone"] != "domain" || info["status"] != "1" {
+		t.Fatalf("info = %#v", info)
+	}
+}
+
+func TestSortDomainPayloadKeepsJSONTogether(t *testing.T) {
+	domains := []RegisteredDomain{
+		{Name: "later.example", Expires: "2027-01-01"},
+		{Name: "soon.example", Expires: "2026-01-01"},
+	}
+	raw := json.RawMessage(`[{"name":"later.example","expires_on":"2027-01-01"},{"name":"soon.example","expires_on":"2026-01-01"}]`)
+	sorted, out, err := SortDomainPayload(domains, raw, "expires")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sorted[0].Name != "soon.example" || sorted[1].Name != "later.example" {
+		t.Fatalf("order = %#v", sorted)
+	}
+	var items []map[string]string
+	if err := json.Unmarshal(out, &items); err != nil {
+		t.Fatal(err)
+	}
+	if items[0]["name"] != "soon.example" || items[1]["name"] != "later.example" {
+		t.Fatalf("json order = %#v", items)
+	}
+}
+
+func TestCredentialsLabel(t *testing.T) {
+	label, err := (Credentials{SubAuthUser: "alice"}).Label()
+	if err != nil || label != "sub-auth-user alice" {
+		t.Fatalf("label = %q, err = %v", label, err)
+	}
+	if _, err := (Credentials{}).Label(); err == nil {
+		t.Fatal("expected missing auth id to fail")
 	}
 }
 

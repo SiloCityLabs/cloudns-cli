@@ -3,6 +3,8 @@ package cli
 import (
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestZoneDeleteRequiresYes(t *testing.T) {
@@ -44,6 +46,36 @@ func TestSOAPatchFromFlags(t *testing.T) {
 	}
 	if patch.PrimaryNS != nil || patch.Refresh != nil {
 		t.Fatalf("unexpected patch %#v", patch)
+	}
+}
+
+func TestRecordAndMasterDeleteRequireYes(t *testing.T) {
+	for _, cmd := range []*cobra.Command{newZoneRecordDeleteCmd(), newZoneMasterDeleteCmd()} {
+		cmd.SetArgs([]string{"example.com", "42"})
+		cmd.SilenceErrors = true
+		cmd.SilenceUsage = true
+		err := cmd.Execute()
+		if err == nil || !strings.Contains(err.Error(), "--yes") {
+			t.Fatalf("%s error = %v", cmd.Name(), err)
+		}
+	}
+}
+
+func TestExportArgs(t *testing.T) {
+	all := newZoneExportCmd()
+	all.SetArgs([]string{"--all"})
+	all.SilenceErrors = true
+	all.SilenceUsage = true
+	if err := all.Execute(); err == nil || !strings.Contains(err.Error(), "--dir") {
+		t.Fatalf("--all error = %v", err)
+	}
+
+	both := newZoneExportCmd()
+	both.SetArgs([]string{"example.com", "--all", "--dir", t.TempDir()})
+	both.SilenceErrors = true
+	both.SilenceUsage = true
+	if err := both.Execute(); err == nil || !strings.Contains(err.Error(), "--all") {
+		t.Fatalf("both error = %v", err)
 	}
 }
 
